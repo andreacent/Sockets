@@ -1,7 +1,7 @@
 /* 
 	Taller 2
 	Andrea Centeno 10-10138
-	Roberto Romero 
+	Roberto Romero 10-10642
 */
 #include "svr.h"
 
