@@ -46,7 +46,6 @@ int main(int argc , char *argv[])
     {
         printf("Could not create socket");
     }
-    puts("Socket created");
      
     server.sin_addr.s_addr = inet_addr(argv[ip]);
     server.sin_family = AF_INET;
@@ -65,11 +64,18 @@ int main(int argc , char *argv[])
     while(1)
     {
         printf("Enter message : ");
-        scanf("%s" , message);
+        int i = 0;
+        char *a = (char *) malloc(sizeof(char) * 1000);
+        while (1) {
+            scanf("%c", &a[i]);
+            if (a[i] == '\n') break;
+            else i++;
+        }
+        a[i] = '\0';
         
-        char msg[1000];
+        char msg[1024];
         strcpy(msg, time_stamp());  
-        strcat(msg, message );
+        strcat(msg, a );
 
         //Send some data
         if( send(sock , msg , strlen(msg) , 0) < 0)
@@ -85,8 +91,6 @@ int main(int argc , char *argv[])
             break;
         }
          
-        puts(server_reply);
-
         memset(server_reply, 0, strlen(server_reply));
         //memset(server_reply, 0, sizeof 2000);
     }
@@ -107,7 +111,7 @@ char *time_stamp(){
     tm=localtime(&ltime);
 
     char *timestamp = (char *)malloc(sizeof(char) * 16);
-    sprintf(timestamp,"%02d/%02d/%04d, %02d:%02d:%02d | ", tm->tm_mon, tm->tm_mday, tm->tm_year+1900, 
+    sprintf(timestamp,"%02d/%02d/%04d, %02d:%02d:%02d|", tm->tm_mon, tm->tm_mday, tm->tm_year+1900, 
            tm->tm_hour, tm->tm_min, tm->tm_sec);
 
     return timestamp;

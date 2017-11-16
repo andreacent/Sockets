@@ -11,11 +11,13 @@
 #include <unistd.h>    //write
 #include <pthread.h> //for threading , link with lpthread
 #include <sys/types.h>
+#include <ctype.h> //tolower
 
 FILE *bitacora;
 
 //the thread function
 void *connection_handler(void *);
+int get_event_id(char message[]);
  
 int main(int argc , char *argv[])
 {
@@ -34,7 +36,7 @@ int main(int argc , char *argv[])
                 puerto_svr_s= atoi(argv[x+1]);
                 break;
             case 'b':
-                bitacora = fopen(argv[x+1], "wb");
+                bitacora = fopen(argv[x+1], "w");
                 break;
         }
     }
@@ -91,7 +93,7 @@ int main(int argc , char *argv[])
         return 1;
     }
     
-    fclose(bitacora);
+    //fclose(bitacora);
 
     return 0;
 }
@@ -103,34 +105,44 @@ void *connection_handler(void *socket_desc)
 {
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
-    int read_size;
-    char *message , client_message[2000];
+    int read_size, event;
+    char *message, client_message[2000];
+    char eventID[2];
           
     //Receive a message from client
     while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
     {
-        puts(client_message);
+        write(sock , "ACK" , 3);
 
-        //Send the message back to client
-        message = "ACK";
-        write(sock , message , strlen(message));
+        char tuple[2000];
 
         //pid_t tid = gettid();
-        char *p,tuple[2000];
-
-        //(serial, fecha, hora, identificación del ATM, código del evento, patrón reconocido, información recibida)
-        strcpy(tuple, "serial,");  
+        //(serial, fecha, hora, identificación del ATM, código del evento, 
+        // patron reconocido, información recibida)
+        strcpy(tuple, "serial");  
+        strcat(tuple, ", ");
         strcat(tuple, strtok(client_message, "|")); 
-        strcat(tuple, ","); 
+        strcat(tuple, ", id atm, ");
         //strcat(tuple, tid);
-        strcat(tuple, ", 0,"); 
-        strcat(tuple, "patron,");
-        strcat(tuple, strtok(NULL,"|")); 
+
+        message = strtok(NULL,"|");
+        event = get_event_id(message);
+        sprintf(eventID, "%d", event);
+        
+        if (event != 0)  write(sock , "ALERTA" , 6);
+ 
+        strcat(tuple, eventID);
+        strcat(tuple, ", ");
+        if (event != 0) strcat(tuple, message); else strcat(tuple, "none");
+        strcat(tuple, ", ");
+        strcat(tuple, message); 
 
         puts(tuple);
 
-        char buffer[] = { 'x' , 'y' , 'z' };
-        fwrite(buffer , sizeof(char), sizeof(buffer) , bitacora );
+        fwrite(tuple , sizeof(char), sizeof(tuple) , bitacora );
+
+        memset(client_message, 0, sizeof(client_message));
+        //memset(message, 0, sizeof(message));
     }
      
     if(read_size == 0)
@@ -146,5 +158,31 @@ void *connection_handler(void *socket_desc)
     //Free the socket pointer
     free(socket_desc);
      
+    return 0;
+}
+
+/*
+ * Obtiene id del evento o devuelve 0
+ * */
+int get_event_id(char client_message[])
+{
+    char message[2000];
+
+    for (int i=0; client_message[i]; i++) 
+        message[i] = tolower((unsigned char)client_message[i]);
+
+    if (strcmp(message, "communication offline") == 0) return 1;
+    else if (strcmp(message, "communication error") == 0) return 2;
+    else if (strcmp(message, "low cash alert") == 0) return 3;
+    else if (strcmp(message, "running out of notes in cassette") == 0) return 4;
+    else if (strcmp(message, "empty") == 0) return 5;
+    else if (strcmp(message, "service mode entered") == 0) return 6;
+    else if (strcmp(message, "service mode left") == 0) return 7;
+    else if (strcmp(message, "device did not answer as expected") == 0) return 8;
+    else if (strcmp(message, "the protocol was cancelled") == 0) return 9;
+    else if (strcmp(message, "low paper warning") == 0) return 10;
+    else if (strcmp(message, "printer error") == 0) return 11;
+    else if (strcmp(message, "paper-out condition") == 0) return 12;
+    
     return 0;
 }
