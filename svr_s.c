@@ -6,14 +6,14 @@
 #include <stdio.h>
 #include <string.h>    //strlen
 #include <stdlib.h>    //strlen
-#include <sys/socket.h>
+#include <ctype.h> //tolower
 #include <arpa/inet.h> //inet_addr
 #include <unistd.h>    //write
 #include <pthread.h> //for threading , link with lpthread
-#include <sys/types.h>
-#include <ctype.h> //tolower
 
-FILE *bitacora;
+#include <sys/socket.h>
+
+char* filename; 
 
 //the thread function
 void *connection_handler(void *);
@@ -36,7 +36,7 @@ int main(int argc , char *argv[])
                 puerto_svr_s= atoi(argv[x+1]);
                 break;
             case 'b':
-                bitacora = fopen(argv[x+1], "w");
+                filename=argv[x+1];
                 break;
         }
     }
@@ -104,10 +104,17 @@ int main(int argc , char *argv[])
 void *connection_handler(void *socket_desc)
 {
     //Get the socket descriptor
+    //pid_t tid = gettid();
+    //pthread_id_np_t   tid;
+   // tid = pthread_getthreadid_np();
+
     int sock = *(int*)socket_desc;
     int read_size, event;
     char *message, client_message[2000];
     char eventID[2];
+
+    FILE *bitacora = fopen(filename, "a");
+    if (!bitacora) bitacora = fopen(filename, "w");
           
     //Receive a message from client
     while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
@@ -116,14 +123,14 @@ void *connection_handler(void *socket_desc)
 
         char tuple[2000];
 
-        //pid_t tid = gettid();
         //(serial, fecha, hora, identificación del ATM, código del evento, 
         // patron reconocido, información recibida)
         strcpy(tuple, "serial");  
         strcat(tuple, ", ");
         strcat(tuple, strtok(client_message, "|")); 
-        strcat(tuple, ", id atm, ");
-        //strcat(tuple, tid);
+        strcat(tuple, ", ");
+        strcat(tuple, "tid");
+        strcat(tuple, ", ");
 
         message = strtok(NULL,"|");
         event = get_event_id(message);
@@ -139,11 +146,12 @@ void *connection_handler(void *socket_desc)
 
         puts(tuple);
 
-        fwrite(tuple , sizeof(char), sizeof(tuple) , bitacora );
+        fprintf(bitacora, "%s\n",tuple );
 
         memset(client_message, 0, sizeof(client_message));
-        //memset(message, 0, sizeof(message));
     }
+    
+    fclose(bitacora);
      
     if(read_size == 0)
     {

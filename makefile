@@ -6,7 +6,7 @@ svr_c: svr_c.o
 	gcc -g -Wall -std=c11 svr_c.o -o svr_c
 
 svr_s: svr_s.o
-	gcc -g -Wall -std=c11 svr_s.o -o svr_s -pthread
+	gcc -g -Wall -std=c11 svr_s.o -o svr_s -pthread -lpthread
 
 svr_c.o: svr_c.c 
 	gcc -c -std=c11 svr_c.c
