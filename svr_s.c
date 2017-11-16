@@ -108,6 +108,10 @@ void *connection_handler(void *socket_desc)
     //pthread_id_np_t   tid;
    // tid = pthread_getthreadid_np();
 
+    pthread_t tid = pthread_self();
+    char tid_str[256];
+    sprintf(tid_str, "%lld", tid);
+
     int sock = *(int*)socket_desc;
     int read_size, event;
     char *message, client_message[2000];
@@ -129,7 +133,7 @@ void *connection_handler(void *socket_desc)
         strcat(tuple, ", ");
         strcat(tuple, strtok(client_message, "|")); 
         strcat(tuple, ", ");
-        strcat(tuple, "tid");
+        strcat(tuple, tid_str);
         strcat(tuple, ", ");
 
         message = strtok(NULL,"|");
