@@ -18,14 +18,16 @@
 #include <arpa/inet.h> //inet_addr
 #include <unistd.h>    //write
 #include <pthread.h> //for threading , link with lpthread
-
+#include <signal.h>
 #include <sys/socket.h>
 
 char* filename; 
+FILE *bitacora;
 
+int get_event_id(char message[]);
+void INThandler(int);
 //the thread function
 void *connection_handler(void *);
-int get_event_id(char message[]);
  
 int main(int argc , char *argv[])
 {
@@ -47,6 +49,8 @@ int main(int argc , char *argv[])
                 break;
             case 'b':
                 filename=argv[x+1];
+                bitacora = fopen(filename, "a");
+                if (!bitacora) bitacora = fopen(filename, "w");
                 break;
         }
     }
@@ -77,7 +81,8 @@ int main(int argc , char *argv[])
     //Acepta una conexion entrante
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
-     
+    
+    signal(SIGINT, INThandler);
     while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) )
     {
         puts("Connection accepted");
@@ -103,8 +108,6 @@ int main(int argc , char *argv[])
         return 1;
     }
     
-    //fclose(bitacora);
-
     return 0;
 }
 
@@ -113,11 +116,6 @@ int main(int argc , char *argv[])
  * */
 void *connection_handler(void *socket_desc)
 {
-    //Get the socket descriptor
-    //pid_t tid = gettid();
-    //pthread_id_np_t   tid;
-   // tid = pthread_getthreadid_np();
-
     pthread_t tid = pthread_self();
     char tid_str[256];
     sprintf(tid_str, "%lld", tid);
@@ -126,9 +124,6 @@ void *connection_handler(void *socket_desc)
     int read_size, event;
     char *message, client_message[2000];
     char eventID[2];
-
-    FILE *bitacora = fopen(filename, "a");
-    if (!bitacora) bitacora = fopen(filename, "w");
           
     //Receive a message from client
     while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
@@ -139,7 +134,7 @@ void *connection_handler(void *socket_desc)
 
         //(serial, fecha, hora, identificación del ATM, código del evento, 
         // patron reconocido, información recibida)
-        strcpy(tuple, "serial");  
+        strcpy(tuple, tid_str);  
         strcat(tuple, ", ");
         strcat(tuple, strtok(client_message, "|")); 
         strcat(tuple, ", ");
@@ -160,13 +155,11 @@ void *connection_handler(void *socket_desc)
 
         puts(tuple);
 
-        fprintf(bitacora, "%s\n",tuple );
+        fprintf(bitacora, "%s\n", tuple);
 
         memset(client_message, 0, sizeof(client_message));
     }
     
-    fclose(bitacora); // se cierra el documento utilizado como bitacora
-     
     if(read_size == 0)
     {
         puts("Client disconnected");
@@ -218,4 +211,20 @@ int get_event_id(char client_message[])
     else if (strcmp(message, "paper-out condition") == 0) return 12;
     
     return 0;
+}
+
+//se encarga de las senales (como control-c)
+void  INThandler(int sig)
+{
+    char  c;
+
+    signal(sig, SIG_IGN);
+    printf("\nDo you really want to quit? [y/n] ");
+    c = getchar();
+    if (c == 'y' || c == 'Y') {
+        fclose(bitacora);
+        exit(0);
+    }
+    else signal(SIGINT, INThandler);
+    getchar(); // Get new line character
 }
