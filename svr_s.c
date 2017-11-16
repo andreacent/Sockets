@@ -1,8 +1,16 @@
-/*
-    Taller 2
-    Andrea Centeno 10-10138
-    Roberto Romero 10-10642
+/**
+* Taller cerrado 3.
+*
+* Aplicación en la red usando la API de sockets de Berkeley.
+* Archivo que simula la aplicación que se ejecuta en el módulo central.
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @version 1.0
+* @since   2017-11-12 
 */
+
 #include <stdio.h>
 #include <string.h>    //strlen
 #include <stdlib.h>    //strlen
@@ -27,9 +35,11 @@ int main(int argc , char *argv[])
      
     if(argc < 5){
         printf("USO CORRECTO: svr_s -l <puerto_svr_s> -b <archivo_bitacora> \n");
-        exit(1); //Sale del programa si el usuario no introduce el número correcto de argumentos
+        exit(1); //Sale del programa si el usuario no introduce el número correcto de argumentos 
+                 // mostrandole el uso correcto de la sintaxis del programa
     }
 
+    // lectura y asignacion de los argumentos
     for(int x=1;x<argc;x+=2){
         switch(argv[x][1]){
             case 'l':
@@ -41,7 +51,7 @@ int main(int argc , char *argv[])
         }
     }
 
-    //Create socket
+    //Se crea el socket
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
     if (socket_desc == -1)
     {
@@ -56,15 +66,15 @@ int main(int argc , char *argv[])
     //Bind
     if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0)
     {
-        //print the error message
+        //imprime el mensaje de error
         perror("bind failed. Error");
         return 1;
     }
      
-    //Listen
+    //
     listen(socket_desc , 3);
      
-    //Accept and incoming connection
+    //Acepta una conexion entrante
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
      
@@ -167,15 +177,26 @@ void *connection_handler(void *socket_desc)
         perror("recv failed");
     }
          
-    //Free the socket pointer
+    //Libera el apuntador al socket
     free(socket_desc);
      
     return 0;
 }
 
-/*
- * Obtiene id del evento o devuelve 0
- * */
+/**
+* Funcion get_event_id()
+*
+* Funcion que devuelve el id del evento y en caso de error o de no encontrar el evento devuelve 0
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @param client_message[] array del mensaje del cliente
+* @return retorna el id del evento o en su defecto retorna 0
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 int get_event_id(char client_message[])
 {
     char message[2000];

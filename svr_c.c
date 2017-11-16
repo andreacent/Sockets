@@ -1,8 +1,16 @@
-/*
-    Taller 2
-    Andrea Centeno 10-10138
-    Roberto Romero 10-10642
+/**
+* Taller cerrado 3.
+*
+* Aplicación en la red usando la API de sockets de Berkeley.
+* Archivo que simula la aplicación que se ejecuta en el ATM.
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @version 1.0
+* @since   2017-11-12 
 */
+
 #include <stdlib.h> //exit(1)
 #include <stdio.h> //printf
 #include <string.h>    //strlen
