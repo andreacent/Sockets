@@ -26,6 +26,7 @@ FILE *bitacora;
 
 int get_event_id(char message[]);
 void INThandler(int);
+void  send_mail(char body[]);
 //the thread function
 void *connection_handler(void *);
  
@@ -122,7 +123,7 @@ void *connection_handler(void *socket_desc)
 
     int sock = *(int*)socket_desc;
     int read_size, event;
-    char *message, client_message[2000];
+    char *datetime, *message, client_message[2000];
     char eventID[2];
           
     //Receive a message from client
@@ -131,32 +132,34 @@ void *connection_handler(void *socket_desc)
         write(sock , "ACK" , 3);
 
         char tuple[2000];
+        datetime = strtok(client_message, "|");        
+        message = strtok(NULL,"|");
+        event = get_event_id(message);
+        sprintf(eventID, "%d", event);
 
         //(serial, fecha, hora, identificación del ATM, código del evento, 
         // patron reconocido, información recibida)
         strcpy(tuple, tid_str);  
         strcat(tuple, ", ");
-        strcat(tuple, strtok(client_message, "|")); 
+        strcat(tuple, datetime); 
         strcat(tuple, ", ");
         strcat(tuple, tid_str);
-        strcat(tuple, ", ");
-
-        message = strtok(NULL,"|");
-        event = get_event_id(message);
-        sprintf(eventID, "%d", event);
-        
-        if (event != 0)  write(sock , "ALERTA" , 6);
- 
+        strcat(tuple, ", ");         
         strcat(tuple, eventID);
         strcat(tuple, ", ");
-        if (event != 0) strcat(tuple, message); else strcat(tuple, "none");
+        if (event != 0) strcat(tuple, message);
+        else strcat(tuple, "none");
         strcat(tuple, ", ");
         strcat(tuple, message); 
 
-        puts(tuple);
+        if (event != 0) {
+            puts(tuple);
+            send_mail(tuple);
+        }
 
         fprintf(bitacora, "%s\n", tuple);
 
+        //vacia el string client_message
         memset(client_message, 0, sizeof(client_message));
     }
     
@@ -226,5 +229,22 @@ void  INThandler(int sig)
         exit(0);
     }
     else signal(SIGINT, INThandler);
-    getchar(); // Get new line character
+}
+
+//envia correo de alerta
+void  send_mail(char body[])
+{
+    char cmd[100];  // to hold the command.
+    char to[] = "andreacent8@gmail.com"; // email id of the recepient.
+    char tempFile[100];     // name of tempfile.
+
+    strcpy(tempFile,"/tmp/sendmail"); // generate temp file name.
+
+    FILE *fp = fopen(tempFile,"w"); // open it for writing.
+    fprintf(fp,"%s\n",body);        // write body to it.
+    fclose(fp);             // close it.
+
+    //sprintf(cmd,"sendmail -s 'SVR' %s < %s",to,tempFile); // prepare command.
+    sprintf(cmd,"mail -s \"SVR\" %s < %s",to,tempFile); // prepare command.
+    system(cmd);     // execute it.
 }
