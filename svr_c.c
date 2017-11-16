@@ -33,6 +33,7 @@ int main(int argc , char *argv[])
         exit(1); //Sale del programa si el usuario no introduce el número correcto de argumentos
     }
 
+    // lectura y asignacion de los argumentos
     for(int x=1; x < argc ; x+=2){
         switch(argv[x][1]){
             case 'p':
@@ -48,7 +49,7 @@ int main(int argc , char *argv[])
         }
     }
 
-    //Create socket
+    //Crea el socket
     sock = socket(AF_INET , SOCK_STREAM , 0);
     if (sock == -1)
     {
@@ -59,7 +60,7 @@ int main(int argc , char *argv[])
     server.sin_family = AF_INET;
     server.sin_port = htons(puerto_svr_s);
 
-    //Connect to remote server
+    //Se conecta al servidor remoto
     if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
     {
         perror("connect failed. Error");
@@ -68,7 +69,7 @@ int main(int argc , char *argv[])
      
     puts("Connected\n");
      
-    //keep communicating with server
+    //mantiene la comunicacion con el servidor
     while(1)
     {
         printf("Enter message : ");
@@ -107,8 +108,18 @@ int main(int argc , char *argv[])
     return 0;
 }
 
-/*
- Returns the current time.
+/**
+* Funcion time_stamp()
+*
+* Funcion que devuelve la hora y fecha actual
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @return retorna la hora y fecha actual
+*
+* @version 1.0
+* @since   2017-11-12 
 */
 
 char *time_stamp(){    

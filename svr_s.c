@@ -71,7 +71,7 @@ int main(int argc , char *argv[])
         return 1;
     }
      
-    //
+    // 
     listen(socket_desc , 3);
      
     //Acepta una conexion entrante
@@ -165,7 +165,7 @@ void *connection_handler(void *socket_desc)
         memset(client_message, 0, sizeof(client_message));
     }
     
-    fclose(bitacora);
+    fclose(bitacora); // se cierra el documento utilizado como bitacora
      
     if(read_size == 0)
     {
