@@ -1,11 +1,18 @@
 /*
-    C ECHO client example using sockets
+    Taller 2
+    Andrea Centeno 10-10138
+    Roberto Romero 10-10642
 */
-#include<stdio.h> //printf
-#include<string.h>    //strlen
-#include<sys/socket.h>    //socket
-#include<arpa/inet.h> //inet_addr
+#include <stdlib.h> //exit(1)
+#include <stdio.h> //printf
+#include <string.h>    //strlen
+#include <sys/socket.h>    //socket
+#include <arpa/inet.h> //inet_addr
+#include <unistd.h> // for close
+#include <time.h>
  
+char *time_stamp();
+
 int main(int argc , char *argv[])
 {
     int sock;
@@ -44,7 +51,7 @@ int main(int argc , char *argv[])
     server.sin_addr.s_addr = inet_addr(argv[ip]);
     server.sin_family = AF_INET;
     server.sin_port = htons(puerto_svr_s);
-    
+
     //Connect to remote server
     if (connect(sock , (struct sockaddr *)&server , sizeof(server)) < 0)
     {
@@ -59,9 +66,13 @@ int main(int argc , char *argv[])
     {
         printf("Enter message : ");
         scanf("%s" , message);
-         
+        
+        char msg[1000];
+        strcpy(msg, time_stamp());  
+        strcat(msg, message );
+
         //Send some data
-        if( send(sock , message , strlen(message) , 0) < 0)
+        if( send(sock , msg , strlen(msg) , 0) < 0)
         {
             puts("Send failed");
             return 1;
@@ -74,10 +85,30 @@ int main(int argc , char *argv[])
             break;
         }
          
-        puts("Server reply :");
         puts(server_reply);
+
+        memset(server_reply, 0, strlen(server_reply));
+        //memset(server_reply, 0, sizeof 2000);
     }
      
     close(sock);
     return 0;
+}
+
+/*
+ Returns the current time.
+*/
+
+char *time_stamp(){    
+    time_t ltime;
+    ltime=time(NULL);
+
+    struct tm *tm;
+    tm=localtime(&ltime);
+
+    char *timestamp = (char *)malloc(sizeof(char) * 16);
+    sprintf(timestamp,"%02d/%02d/%04d, %02d:%02d:%02d | ", tm->tm_mon, tm->tm_mday, tm->tm_year+1900, 
+           tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+    return timestamp;
 }

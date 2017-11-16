@@ -1,5 +1,7 @@
 /*
-    C socket server example, handles multiple clients using threads
+    Taller 2
+    Andrea Centeno 10-10138
+    Roberto Romero 10-10642
 */
 #include <stdio.h>
 #include <string.h>    //strlen
@@ -8,6 +10,7 @@
 #include <arpa/inet.h> //inet_addr
 #include <unistd.h>    //write
 #include <pthread.h> //for threading , link with lpthread
+#include <sys/types.h>
 
 FILE *bitacora;
 
@@ -31,7 +34,7 @@ int main(int argc , char *argv[])
                 puerto_svr_s= atoi(argv[x+1]);
                 break;
             case 'b':
-                bitacora = fopen(argv[x+1], "w");
+                bitacora = fopen(argv[x+1], "wb");
                 break;
         }
     }
@@ -42,7 +45,6 @@ int main(int argc , char *argv[])
     {
         printf("Could not create socket");
     }
-    puts("Socket created");
      
     //Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
@@ -56,7 +58,6 @@ int main(int argc , char *argv[])
         perror("bind failed. Error");
         return 1;
     }
-    puts("bind done");
      
     //Listen
     listen(socket_desc , 3);
@@ -65,10 +66,6 @@ int main(int argc , char *argv[])
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
      
-     
-    //Accept and incoming connection
-    puts("Waiting for incoming connections...");
-    c = sizeof(struct sockaddr_in);
     while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) )
     {
         puts("Connection accepted");
@@ -93,7 +90,9 @@ int main(int argc , char *argv[])
         perror("accept failed");
         return 1;
     }
-     
+    
+    fclose(bitacora);
+
     return 0;
 }
 
@@ -106,19 +105,32 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     int read_size;
     char *message , client_message[2000];
-     
-    //Send some messages to the client
-    message = "Greetings! I am your connection handler\n";
-    write(sock , message , strlen(message));
-     
-    message = "Now type something and i shall repeat what you type \n";
-    write(sock , message , strlen(message));
-     
+          
     //Receive a message from client
     while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
     {
+        puts(client_message);
+
         //Send the message back to client
-        write(sock , client_message , strlen(client_message));
+        message = "ACK";
+        write(sock , message , strlen(message));
+
+        //pid_t tid = gettid();
+        char *p,tuple[2000];
+
+        //(serial, fecha, hora, identificación del ATM, código del evento, patrón reconocido, información recibida)
+        strcpy(tuple, "serial,");  
+        strcat(tuple, strtok(client_message, "|")); 
+        strcat(tuple, ","); 
+        //strcat(tuple, tid);
+        strcat(tuple, ", 0,"); 
+        strcat(tuple, "patron,");
+        strcat(tuple, strtok(NULL,"|")); 
+
+        puts(tuple);
+
+        char buffer[] = { 'x' , 'y' , 'z' };
+        fwrite(buffer , sizeof(char), sizeof(buffer) , bitacora );
     }
      
     if(read_size == 0)

@@ -8,10 +8,10 @@ svr_c: func.o svr_c.o
 svr_s: func.o svr_s.o
 	gcc -g -Wall -std=c11 svr_s.o -o svr_s -pthread
 
-svr_c.o: svr_c.c svr.h
+svr_c.o: svr_c.c 
 	gcc -c -std=c11 svr_c.c
 
-svr_s.o: svr_s.c svr.h
+svr_s.o: svr_s.c 
 	gcc -c -std=c11 svr_s.c
 	
 clean:
