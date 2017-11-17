@@ -25,6 +25,7 @@
 // Declaraciones
 char* filename; 
 FILE *bitacora;
+char verbose = 0;
 
 int get_event_id(char message[]);
 void INThandler(int sig);
@@ -70,6 +71,9 @@ int main(int argc , char *argv[])
                 filename=argv[x+1];
                 bitacora = fopen(filename, "a");
                 if (!bitacora) bitacora = fopen(filename, "w");
+                break;
+            case 'v':
+                verbose = 1;
                 break;
         }
     }
@@ -248,6 +252,7 @@ void create_tuple(char datetime[], char tid[], int event, char message[], char p
 
     if (event != 0) {
         puts("--------ALARM--------");
+        if(verbose) puts(tuple);
         send_mail(tuple);
     }
 
@@ -279,7 +284,8 @@ void send_mail(char body[])
     fclose(fp);             // close it.
 
     //sprintf(cmd,"sendmail -s 'SVR' %s < %s",to,tempFile); // prepare command.
-    sprintf(cmd,"mail -v -s \"SVR\" %s < %s",to,tempFile); // prepare command.
+    if(verbose) sprintf(cmd,"mail -v -s \"SVR\" %s < %s",to,tempFile); 
+    else sprintf(cmd,"mail -s \"SVR\" %s < %s",to,tempFile); 
     system(cmd);     // execute it.
 }
 
@@ -301,13 +307,8 @@ void  INThandler(int sig)
     char  c;
 
     signal(sig, SIG_IGN);
-    printf("\nDo you really want to quit? [y/n] ");
-    c = getchar();
-    if (c == 'y' || c == 'Y') {
-        fclose(bitacora);
-        exit(0);
-    }
-    else signal(SIGINT, INThandler);
+    fclose(bitacora);
+    exit(0);
 }
 
 
