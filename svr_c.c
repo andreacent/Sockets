@@ -86,6 +86,7 @@ int main(int argc , char *argv[])
     if (sock == -1)
     {
         printf("Could not create socket");
+        return 1;
     }
      
     server.sin_addr.s_addr = inet_addr(ip);

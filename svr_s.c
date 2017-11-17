@@ -247,7 +247,7 @@ void create_tuple(char datetime[], char tid[], int event, char message[], char p
     sprintf(tuple,"%s, %s, %s, %d, %s, %s",tid,datetime,tid,event,pattern,message);
 
     if (event != 0) {
-        //puts(tuple);
+        puts("--------ALARM--------");
         send_mail(tuple);
     }
 
@@ -269,7 +269,7 @@ void create_tuple(char datetime[], char tid[], int event, char message[], char p
 void send_mail(char body[])
 {
     char cmd[100];  // to hold the command.
-    char to[] = "andreacent8@gmail.com"; // email id of the recepient.
+    char to[] = "andrea@ldc.usb.ve"; // email id of the recepient.
     char tempFile[100];     // name of tempfile.
 
     strcpy(tempFile,"/tmp/sendmail"); // generate temp file name.
@@ -279,7 +279,7 @@ void send_mail(char body[])
     fclose(fp);             // close it.
 
     //sprintf(cmd,"sendmail -s 'SVR' %s < %s",to,tempFile); // prepare command.
-    sprintf(cmd,"mail -s \"SVR\" %s < %s",to,tempFile); // prepare command.
+    sprintf(cmd,"mail -v -s \"SVR\" %s < %s",to,tempFile); // prepare command.
     system(cmd);     // execute it.
 }
 
