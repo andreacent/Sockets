@@ -18,36 +18,54 @@
 #include <arpa/inet.h> //inet_addr
 #include <unistd.h> // for close
 #include <time.h>
+#include <netdb.h>
+
+#define h_addr h_addr_list[0]
  
 char *time_stamp();
+char *ip_local(char name[]);
 
 int main(int argc , char *argv[])
 {
     int sock;
     struct sockaddr_in server;
     char message[1000] , server_reply[2000];
-    int puerto_svr_s,ip,puerto_local;
+    int puerto_svr_s,puerto_local;
+    char *ip_host,*ip;
 
     if(argc != 5 && argc != 7){
-        printf("USO CORRECTO: svr_c -d <nombre_módulo_central> -p <puerto_svr_s> [-l <puerto_local>] \n");
+        printf("USO CORRECTO: svr_c -d <ip_módulo_central> -p <puerto_svr_s> [-l <puerto_local>] [-h <nombre_módulo_central>] \n");
         exit(1); //Sale del programa si el usuario no introduce el número correcto de argumentos
     }
 
+    char attr = 0;
     // lectura y asignacion de los argumentos
     for(int x=1; x < argc ; x+=2){
         switch(argv[x][1]){
             case 'p':
                 puerto_svr_s= atoi(argv[x+1]) ;
+                attr++;
                 break;
             case 'd':
-                ip = x+1;
-                //si es dominio, hay que obtener ip
+                ip = argv[x+1];
+                attr++;
                 break;
             case 'l':
                 puerto_local = atoi(argv[x+1]);
                 break;
+            case 'h':
+                ip_host = ip_local(argv[x+1]);
+                attr++;
+                break;
         }
     }
+
+    if(attr < 2){
+        printf("Debe especificar ID o nombre del módulo central con los flags -p o -h\n");
+        exit(1); //Sale del programa si el usuario no introduce el número correcto de argumentos
+    }
+
+    if (!ip) strcpy(ip,ip_host);
 
     //Crea el socket
     sock = socket(AF_INET , SOCK_STREAM , 0);
@@ -56,7 +74,7 @@ int main(int argc , char *argv[])
         printf("Could not create socket");
     }
      
-    server.sin_addr.s_addr = inet_addr(argv[ip]);
+    server.sin_addr.s_addr = inet_addr(ip);
     server.sin_family = AF_INET;
     server.sin_port = htons(puerto_svr_s);
 
@@ -134,4 +152,18 @@ char *time_stamp(){
            tm->tm_hour, tm->tm_min, tm->tm_sec);
 
     return timestamp;
+}
+
+//obtiene la ip de un nombre de dominio
+char *ip_local(char name[]) {
+    struct sockaddr_in host;
+    char *ip;
+
+    struct hostent* h=gethostbyname(name);
+    if (!h) return "";
+
+    host.sin_addr = * (struct in_addr*) h->h_addr;
+    ip = inet_ntoa(host.sin_addr);
+     
+    return ip;
 }

@@ -20,13 +20,17 @@
 #include <pthread.h> //for threading , link with lpthread
 #include <signal.h>
 #include <sys/socket.h>
+#include <time.h>
 
 char* filename; 
 FILE *bitacora;
 
 int get_event_id(char message[]);
-void INThandler(int);
-void  send_mail(char body[]);
+void INThandler(int sig);
+void handle_alarm(int sig);
+void send_mail(char body[]);
+void create_tuple(char datetime[], char tid[], int event, char message[], char pattern[]);
+char *time_stamp();
 //the thread function
 void *connection_handler(void *);
  
@@ -80,14 +84,12 @@ int main(int argc , char *argv[])
     listen(socket_desc , 3);
      
     //Acepta una conexion entrante
-    puts("Waiting for incoming connections...");
+    puts("Working...");
     c = sizeof(struct sockaddr_in);
     
     signal(SIGINT, INThandler);
     while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) )
-    {
-        puts("Connection accepted");
-         
+    {         
         pthread_t sniffer_thread;
         new_sock = malloc(1);
         *new_sock = client_sock;
@@ -100,7 +102,6 @@ int main(int argc , char *argv[])
          
         //Now join the thread , so that we dont terminate before the thread
         //pthread_join( sniffer_thread , NULL);
-        puts("Handler assigned");
     }
      
     if (client_sock < 0)
@@ -124,55 +125,44 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     int read_size, event;
     char *datetime, *message, client_message[2000];
-    char eventID[2];
-          
+
+    //escribe en bitacora que se acepto la conexion
+    create_tuple(time_stamp(), tid_str, 0, "Connection accepted", "N/A");
+
+    //alarma para avisar a los 5 minutos si no hay intercambio
+    signal( SIGALRM, handle_alarm );
+    alarm( 300 ); 
+
     //Receive a message from client
     while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
     {
         write(sock , "ACK" , 3);
 
-        char tuple[2000];
         datetime = strtok(client_message, "|");        
         message = strtok(NULL,"|");
         event = get_event_id(message);
-        sprintf(eventID, "%d", event);
 
-        //(serial, fecha, hora, identificación del ATM, código del evento, 
-        // patron reconocido, información recibida)
-        strcpy(tuple, tid_str);  
-        strcat(tuple, ", ");
-        strcat(tuple, datetime); 
-        strcat(tuple, ", ");
-        strcat(tuple, tid_str);
-        strcat(tuple, ", ");         
-        strcat(tuple, eventID);
-        strcat(tuple, ", ");
-        if (event != 0) strcat(tuple, message);
-        else strcat(tuple, "none");
-        strcat(tuple, ", ");
-        strcat(tuple, message); 
-
-        if (event != 0) {
-            puts(tuple);
-            send_mail(tuple);
-        }
-
-        fprintf(bitacora, "%s\n", tuple);
+        //escribe en bitacora el mensaje
+        if (event > 0)
+            create_tuple(datetime, tid_str, event, message, message);
+        else 
+            create_tuple(datetime, tid_str, event, message, "N/A");
 
         //vacia el string client_message
         memset(client_message, 0, sizeof(client_message));
+
+        //reinicio la alarma
+        alarm( 300 ); 
     }
     
     if(read_size == 0)
     {
-        puts("Client disconnected");
+        //escribe en bitacora cuando el cliente de desconecta
+        create_tuple(time_stamp(), tid_str, 0, "Client disconnected","N/A");
         fflush(stdout);
     }
-    else if(read_size == -1)
-    {
-        perror("recv failed");
-    }
-         
+    //else if(read_size == -1) perror("recv failed");
+
     //Libera el apuntador al socket
     free(socket_desc);
      
@@ -193,12 +183,9 @@ void *connection_handler(void *socket_desc)
 * @version 1.0
 * @since   2017-11-12 
 */
-int get_event_id(char client_message[])
+int get_event_id(char message[])
 {
-    char message[2000];
-
-    for (int i=0; client_message[i]; i++) 
-        message[i] = tolower((unsigned char)client_message[i]);
+    for (int i=0; message[i]; i++) message[i] = tolower(message[i]);
 
     if (strcmp(message, "communication offline") == 0) return 1;
     else if (strcmp(message, "communication error") == 0) return 2;
@@ -216,6 +203,41 @@ int get_event_id(char client_message[])
     return 0;
 }
 
+//crea tupla a escribir en el archivo
+void create_tuple(char datetime[], char tid[], int event, char message[], char pattern[])
+{
+    char tuple[2000];
+
+    //(serial, fecha, hora, identificación del ATM, código del evento, 
+    // patron reconocido, información recibida)
+    sprintf(tuple,"%s, %s, %s, %d, %s, %s",tid,datetime,tid,event,pattern,message);
+
+    if (event != 0) {
+        //puts(tuple);
+        send_mail(tuple);
+    }
+
+    fprintf(bitacora, "%s\n", tuple);
+}
+
+//envia correo de alerta
+void send_mail(char body[])
+{
+    char cmd[100];  // to hold the command.
+    char to[] = "andreacent8@gmail.com"; // email id of the recepient.
+    char tempFile[100];     // name of tempfile.
+
+    strcpy(tempFile,"/tmp/sendmail"); // generate temp file name.
+
+    FILE *fp = fopen(tempFile,"w"); // open it for writing.
+    fprintf(fp,"%s\n",body);        // write body to it.
+    fclose(fp);             // close it.
+
+    //sprintf(cmd,"sendmail -s 'SVR' %s < %s",to,tempFile); // prepare command.
+    sprintf(cmd,"mail -s \"SVR\" %s < %s",to,tempFile); // prepare command.
+    system(cmd);     // execute it.
+}
+
 //se encarga de las senales (como control-c)
 void  INThandler(int sig)
 {
@@ -231,20 +253,44 @@ void  INThandler(int sig)
     else signal(SIGINT, INThandler);
 }
 
-//envia correo de alerta
-void  send_mail(char body[])
-{
-    char cmd[100];  // to hold the command.
-    char to[] = "andreacent8@gmail.com"; // email id of the recepient.
-    char tempFile[100];     // name of tempfile.
+//se encarga de la alarma cuando el tiempo se cumple
+void handle_alarm( int sig ) {
+    signal(sig, SIG_IGN);
 
-    strcpy(tempFile,"/tmp/sendmail"); // generate temp file name.
+    pthread_t tid = pthread_self();
+    char tid_str[256];
+    sprintf(tid_str, "%lld", tid);
 
-    FILE *fp = fopen(tempFile,"w"); // open it for writing.
-    fprintf(fp,"%s\n",body);        // write body to it.
-    fclose(fp);             // close it.
+    create_tuple(time_stamp(), tid_str, 13, "5 minutes without data exchange", "5 minutes");
+    send_mail("client connection - 5 minutes without data exchange");
+    signal( SIGALRM, handle_alarm );
+    alarm( 300 ); //reinicio la alarma
+}
 
-    //sprintf(cmd,"sendmail -s 'SVR' %s < %s",to,tempFile); // prepare command.
-    sprintf(cmd,"mail -s \"SVR\" %s < %s",to,tempFile); // prepare command.
-    system(cmd);     // execute it.
+/**
+* Funcion time_stamp()
+*
+* Funcion que devuelve la hora y fecha actual
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @return retorna la hora y fecha actual
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
+
+char *time_stamp(){    
+    time_t ltime;
+    ltime=time(NULL);
+
+    struct tm *tm;
+    tm=localtime(&ltime);
+
+    char *timestamp = (char *)malloc(sizeof(char) * 16);
+    sprintf(timestamp,"%02d/%02d/%04d, %02d:%02d:%02d", tm->tm_mon, tm->tm_mday, tm->tm_year+1900, 
+           tm->tm_hour, tm->tm_min, tm->tm_sec);
+
+    return timestamp;
 }
