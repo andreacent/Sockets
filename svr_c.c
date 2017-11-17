@@ -20,11 +20,24 @@
 #include <time.h>
 #include <netdb.h>
 
+// Declaraciones
 #define h_addr h_addr_list[0]
  
 char *time_stamp();
 char *ip_local(char name[]);
 
+
+/**
+* Funcion main()
+*
+* Funcion principal del programa
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 int main(int argc , char *argv[])
 {
     int sock;
@@ -154,7 +167,20 @@ char *time_stamp(){
     return timestamp;
 }
 
-//obtiene la ip de un nombre de dominio
+
+/**
+* Funcion ip_local()
+*
+* Funcion que obtiene la ip de un nombre de dominio
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @return retorna la ip de un nombre de dominio
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 char *ip_local(char name[]) {
     struct sockaddr_in host;
     char *ip;

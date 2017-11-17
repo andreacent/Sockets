@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 #include <time.h>
 
+// Declaraciones
 char* filename; 
 FILE *bitacora;
 
@@ -33,7 +34,19 @@ void create_tuple(char datetime[], char tid[], int event, char message[], char p
 char *time_stamp();
 //the thread function
 void *connection_handler(void *);
- 
+
+
+/**
+* Funcion main()
+*
+* Funcion principal del programa
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 int main(int argc , char *argv[])
 {
     int socket_desc , client_sock , c , *new_sock;
@@ -113,9 +126,18 @@ int main(int argc , char *argv[])
     return 0;
 }
 
-/*
- * This will handle connection for each client
- * */
+
+/**
+* Funcion connection_handler()
+*
+* Funcion que maneja la conexion con cada cliente
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 void *connection_handler(void *socket_desc)
 {
     pthread_t tid = pthread_self();
@@ -203,7 +225,17 @@ int get_event_id(char message[])
     return 0;
 }
 
-//crea tupla a escribir en el archivo
+/**
+* Funcion create_tuple()
+*
+* Funcion que crea tupla a escribir en el archivo
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 void create_tuple(char datetime[], char tid[], int event, char message[], char pattern[])
 {
     char tuple[2000];
@@ -220,7 +252,18 @@ void create_tuple(char datetime[], char tid[], int event, char message[], char p
     fprintf(bitacora, "%s\n", tuple);
 }
 
-//envia correo de alerta
+/**
+* Funcion send_mail()
+*
+* Funcion que envia correo de alerta
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 void send_mail(char body[])
 {
     char cmd[100];  // to hold the command.
@@ -238,7 +281,19 @@ void send_mail(char body[])
     system(cmd);     // execute it.
 }
 
-//se encarga de las senales (como control-c)
+
+/**
+* Funcion INThandler()
+*
+* Funcion que se encarga de las manejar las senales
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 void  INThandler(int sig)
 {
     char  c;
@@ -253,7 +308,19 @@ void  INThandler(int sig)
     else signal(SIGINT, INThandler);
 }
 
-//se encarga de la alarma cuando el tiempo se cumple
+
+/**
+* Funcion handle_alarm()
+*
+* Funcion que se encarga de la alarma cuando el tiempo se cumple
+*
+* @author  Andrea Centeno 10-10138
+* @author  Roberto Romero 10-10642
+*
+*
+* @version 1.0
+* @since   2017-11-12 
+*/
 void handle_alarm( int sig ) {
     signal(sig, SIG_IGN);
 
