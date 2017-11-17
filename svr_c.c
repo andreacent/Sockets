@@ -32,6 +32,7 @@ char *ip_local(char name[]);
 *
 * Funcion principal del programa
 *
+* @author  Silver Moon - http://www.binarytides.com/server-client-example-c-sockets-linux/
 * @author  Andrea Centeno 10-10138
 * @author  Roberto Romero 10-10642
 *

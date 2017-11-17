@@ -41,6 +41,7 @@ void *connection_handler(void *);
 *
 * Funcion principal del programa
 *
+* @author  Silver Moon - http://www.binarytides.com/server-client-example-c-sockets-linux/
 * @author  Andrea Centeno 10-10138
 * @author  Roberto Romero 10-10642
 *
@@ -132,6 +133,7 @@ int main(int argc , char *argv[])
 *
 * Funcion que maneja la conexion con cada cliente
 *
+* @author  Silver Moon - http://www.binarytides.com/server-client-example-c-sockets-linux/
 * @author  Andrea Centeno 10-10138
 * @author  Roberto Romero 10-10642
 *
